@@ -10,6 +10,7 @@ import type {
   Agent,
   AgentRuntime,
   MemberWithUser,
+  Space,
 } from "@multica/core/types";
 import {
   AGENT_DESCRIPTION_MAX_LENGTH,
@@ -42,7 +43,7 @@ import { ModelPicker } from "./inspector/model-picker";
 import { RuntimePicker } from "./inspector/runtime-picker";
 import { SkillAttach } from "./inspector/skill-attach";
 import { ThinkingPropRow } from "./inspector/thinking-prop-row";
-import { AccessPicker } from "./inspector/access-picker";
+import { AvailabilityPicker } from "./inspector/availability-picker";
 import { LarkAgentBindButton } from "../../settings/components/lark-tab";
 import { SlackAgentBindButton } from "../../settings/components/slack-tab";
 
@@ -56,6 +57,7 @@ interface InspectorProps {
   // a write needs.
   runtimes: AgentRuntime[];
   members: MemberWithUser[];
+  spaces: Space[];
   currentUserId: string | null;
   /**
    * Computed by the parent via `useAgentPermissions(agent).canEdit.allowed`.
@@ -93,6 +95,7 @@ export function AgentDetailInspector({
   presence,
   runtimes,
   members,
+  spaces,
   currentUserId,
   canEdit,
   onUpdate,
@@ -148,23 +151,23 @@ export function AgentDetailInspector({
           canEdit={canEdit}
           onChange={(v) => update({ thinking_level: v })}
         />
-        <PropRow label={t(($) => $.inspector.prop_visibility)} interactive={false}>
-          <AccessPicker
+        <PropRow label={t(($) => $.inspector.prop_availability)} interactive={false}>
+          <AvailabilityPicker
+            availabilityMode={agent.availability_mode}
+            availabilitySpaceIds={agent.availability_space_ids}
             permissionMode={agent.permission_mode}
             invocationTargets={agent.invocation_targets}
-            visibility={agent.visibility}
-            members={members}
-            // Access is OWNER-ONLY (MUL-3963): a workspace admin can edit other
-            // agent properties (canEdit) but NOT who may run the agent. Gate the
-            // picker on ownership specifically so non-owners get the read-only
-            // state instead of a control the backend would reject with 403.
+            spaces={spaces}
+            // Availability is owner-only. Workspace admins retain governance
+            // visibility but cannot share another person's Agent or connected
+            // apps into a Space.
             canEdit={
               currentUserId !== null && agent.owner_id === currentUserId
             }
             hasComposioAllowlist={
               (agent.composio_toolkit_allowlist ?? []).length > 0
             }
-            onChange={(next) => update(next)}
+            onChange={(next) => update({ ...next })}
           />
         </PropRow>
         <PropRow label={t(($) => $.inspector.prop_concurrency)} interactive={false}>

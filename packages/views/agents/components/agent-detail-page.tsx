@@ -25,6 +25,7 @@ import {
   workspaceKeys,
 } from "@multica/core/workspace/queries";
 import { runtimeListOptions } from "@multica/core/runtimes";
+import { spaceListOptions } from "@multica/core/spaces";
 import { useAgentPermissions } from "@multica/core/permissions";
 import { Button } from "@multica/ui/components/ui/button";
 import { CapabilityBanner } from "@multica/ui/components/common/capability-banner";
@@ -71,6 +72,7 @@ export function AgentDetailPage({ agentId }: AgentDetailPageProps) {
   } = useQuery(agentListOptions(wsId));
   const { data: runtimes = [] } = useQuery(runtimeListOptions(wsId));
   const { data: members = [] } = useQuery(memberListOptions(wsId));
+  const { data: spaces = [] } = useQuery(spaceListOptions(wsId));
 
   // Single workspace-level presence pass; this page just reads its slot.
   // The hook owns the 30s tick so the failed-window auto-clears here too.
@@ -291,6 +293,7 @@ export function AgentDetailPage({ agentId }: AgentDetailPageProps) {
           presence={presence}
           runtimes={runtimes}
           members={members}
+          spaces={spaces}
           currentUserId={currentUser?.id ?? null}
           canEdit={canEdit.allowed}
           onUpdate={handleUpdate}
