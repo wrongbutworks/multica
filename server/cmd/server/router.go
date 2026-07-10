@@ -1063,6 +1063,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 					// Caller's own membership row.
 					r.Patch("/membership", h.UpdateSpaceMembership)
 					r.Delete("/membership", h.LeaveSpace)
+					r.Patch("/preferences", h.UpdateSpacePreference)
 					r.Get("/members", h.ListSpaceMembers)
 					r.Put("/members", h.ReplaceSpaceMembers)
 					r.Patch("/members/{userId}", h.UpdateSpaceMemberRole)
@@ -1158,9 +1159,9 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 					r.Post("/restore", h.RestoreAgent)
 					r.Post("/cancel-tasks", h.CancelAgentTasks)
 					r.Get("/tasks", h.ListAgentTasks)
-					r.Get("/skills", h.ListAgentSkills)
-					r.Put("/skills", h.SetAgentSkills)
-					r.Post("/skills/add", h.AddAgentSkills)
+					r.With(handler.RequireHumanActor).Get("/skills", h.ListAgentSkills)
+					r.With(handler.RequireHumanActor).Put("/skills", h.SetAgentSkills)
+					r.With(handler.RequireHumanActor).Post("/skills/add", h.AddAgentSkills)
 					// Dedicated env-management endpoint. Owner/admin only;
 					// agent actors are denied. Every reveal / write is
 					// audited to activity_log. See MUL-2600 and
@@ -1180,6 +1181,10 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 
 			// Skills
 			r.Route("/api/skills", func(r chi.Router) {
+				// Running Agents receive only the Skill bundles approved for
+				// their concrete task context through the daemon API. They never
+				// browse or mutate the human Skill catalog using an owner's token.
+				r.Use(handler.RequireHumanActor)
 				r.Get("/", h.ListSkills)
 				r.Post("/", h.CreateSkill)
 				r.Get("/search", h.SearchSkills)
